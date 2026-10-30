@@ -1,0 +1,12 @@
+# Modules
+
+{% for category, views in groups %}
+## {{ category }}
+
+{% for view in views %}
+- {{ module_link(view.id) }}{% if view.line %} — {{ view.line }}{% endif %} {{ env_tags(view) }}
+{% endfor %}
+
+{% else %}
+No modules installed.
+{% endfor %}

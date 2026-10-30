@@ -1,0 +1,14 @@
+# Game Systems
+
+{% for view in views %}
+## {{ system_link(view.id) }}
+
+{% if view.overview %}
+{{ view.overview }}
+
+{% endif %}
+{{ env_tags(view) }} <span class="wiki-tag">{{ view.world_count }} {{ "world" if view.world_count == 1 else "worlds" }}</span>
+
+{% else %}
+No game systems installed.
+{% endfor %}

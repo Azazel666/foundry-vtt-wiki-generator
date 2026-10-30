@@ -1,0 +1,12 @@
+# Changes
+
+{% for day, events in days %}
+## {{ day.isoformat() }}
+
+{% for event in events %}
+- {{ event_line(event) }}
+{% endfor %}
+
+{% else %}
+No changes recorded yet.
+{% endfor %}

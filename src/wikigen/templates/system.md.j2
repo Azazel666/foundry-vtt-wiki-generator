@@ -1,0 +1,24 @@
+---
+title: {{ yaml_title(view.title) }}
+---
+
+# {{ view.title }}
+
+<span class="wiki-tag">Game System</span>
+
+| Env | Version | Worlds |
+| --- | --- | --- |
+{% for row in view.rows %}
+| {{ env_link(row.env) }} | {{ row.version or "—" }} {{ row.marker }} | {% set names = [] %}{% for world in row.worlds %}{% set _ = names.append(world_link(row.env, world)) %}{% endfor %}{{ names | mdjoin }} |
+{% endfor %}
+
+{% include "_package_body.md.j2" %}
+{% if view.made_for_this %}
+## Modules made for it
+
+{% for id in view.made_for_this %}
+- {{ module_link(id) }}
+{% endfor %}
+
+{% endif %}
+{% include "_package_facts.md.j2" %}

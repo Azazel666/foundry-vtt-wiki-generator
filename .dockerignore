@@ -1,0 +1,7 @@
+*
+!pyproject.toml
+!src
+!tests
+!docker
+**/__pycache__
+**/*.egg-info

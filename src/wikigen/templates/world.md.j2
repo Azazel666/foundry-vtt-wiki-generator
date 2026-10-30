@@ -1,0 +1,45 @@
+---
+title: {{ yaml_title(world.name) }}
+---
+
+# {{ world.name }}
+
+{% if cfg.show_world_descriptions %}
+{% for paragraph in paragraphs(world.description) %}
+{{ paragraph }}
+
+{% endfor %}
+{% endif %}
+| Environment | {{ env_link(env) }} |
+| --- | --- |
+| Game system | {{ system_link(world.system) }} {{ world.system_version }} |
+| Foundry core | {{ world.core_version }} |
+| Last played | {{ played(world.last_played) }} |
+
+{% if world.stale %}
+!!! warning "Stale data"
+    This world's settings could not be read tonight. The modules below are from the last successful read.
+
+{% endif %}
+## Enabled modules
+
+{% for category, views in groups %}
+### {{ category }}
+
+{% for view in views %}
+- {{ module_link(view.id) }}{% if view.line %} — {{ view.line }}{% endif %}
+
+{% endfor %}
+
+{% endfor %}
+{% if unknown %}
+### Other
+
+{% for id in unknown %}
+- {{ id }}
+{% endfor %}
+
+{% endif %}
+{% if not groups and not unknown %}
+No modules are enabled.
+{% endif %}

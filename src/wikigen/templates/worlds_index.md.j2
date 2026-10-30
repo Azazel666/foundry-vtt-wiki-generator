@@ -1,0 +1,22 @@
+# Worlds in {{ labels[env] }}
+
+{% if not inventory.available %}
+!!! warning "{{ labels[env] }} is unavailable"
+    It could not be read in the last run; this is the last known state.
+
+{% endif %}
+{% for world in worlds %}
+## {{ world_link(env, world) }}
+
+{% if cfg.show_world_descriptions %}
+{% for paragraph in paragraphs(world.description) %}
+{{ paragraph }}
+
+{% endfor %}
+{% endif %}
+{{ system_link(world.system) }} · last played {{ played(world.last_played) }} · {{ world.enabled | length }} {{ "module" if world.enabled | length == 1 else "modules" }}{% if world.stale %} · stale{% endif %}
+
+
+{% else %}
+No worlds.
+{% endfor %}

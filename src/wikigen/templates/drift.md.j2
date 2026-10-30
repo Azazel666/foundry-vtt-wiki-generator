@@ -1,0 +1,16 @@
+# Drift
+
+Versions in each environment compared to {{ labels[reference] }}. Packages that match everywhere are left out.
+
+{% if rows %}
+| Package | Kind |{% for name in labels %} {{ env_tag(name) }} |{% endfor %}
+
+| --- | --- |{% for label in labels %} --- |{% endfor %}
+
+{% for row in rows %}
+| {% if row.kind == "module" %}{{ module_link(row.id) }}{% else %}{{ system_link(row.id) }}{% endif %} | {{ row.kind }} |{% for name in labels %} {{ cell(row, name) }} |{% endfor %}
+
+{% endfor %}
+{% else %}
+All environments match.
+{% endif %}

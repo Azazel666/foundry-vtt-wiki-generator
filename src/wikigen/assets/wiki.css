@@ -1,0 +1,35 @@
+.wiki-tag {
+  display: inline-block;
+  padding: 0 0.5em;
+  border-radius: 0.3em;
+  font-size: 0.7rem;
+  line-height: 1.6;
+  white-space: nowrap;
+  color: var(--md-default-fg-color--light);
+  background: var(--md-default-fg-color--lightest);
+}
+
+.md-typeset .wiki-env,
+.md-typeset a .wiki-env {
+  display: inline-block;
+  padding: 0 0.5em;
+  border-radius: 0.3em;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;
+  color: #fff;
+  background: #546e7a;
+}
+
+.md-typeset .wiki-env-main {
+  background: #2e7d32;
+}
+
+.md-typeset .wiki-env-stage {
+  background: #b45309;
+}
+
+.md-typeset .wiki-env-canary {
+  background: #7b1fa2;
+}

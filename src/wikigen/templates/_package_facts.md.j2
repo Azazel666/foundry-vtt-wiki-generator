@@ -1,0 +1,42 @@
+{% set package = view.package %}
+## Details
+
+{% set links = [] %}
+{% if is_http(package.url) %}{% set _ = links.append(external("Repository", package.url)) %}{% endif %}
+{% if is_http(package.bugs) %}{% set _ = links.append(external("Report a bug", package.bugs)) %}{% endif %}
+{% if is_http(package.changelog) %}{% set _ = links.append(external("Changelog", package.changelog)) %}{% endif %}
+{% if links %}
+{{ links | mdjoin(" · ") }}
+
+{% endif %}
+{% set authors = [] %}
+{% for author in package.authors if author.name %}
+{% set _ = authors.append(external(author.name, author.url)) %}
+{% endfor %}
+{% if authors %}
+- Authors: {{ authors | mdjoin }}
+{% endif %}
+{% if package.license %}
+- License: {{ external(package.license, package.license) }}
+{% endif %}
+{% set compat = package.compatibility %}
+{% if compat.minimum or compat.maximum or compat.verified %}
+- Compatible with Foundry: {{ compat.minimum or "?" }} – {{ compat.maximum or "?" }}{% if compat.verified %} (verified {{ compat.verified }}){% endif %}
+
+{% endif %}
+{% if package.packs %}
+- Compendium packs: {{ package.packs | map(attribute="label") | select | list | mdjoin }}
+{% endif %}
+
+{% if view.summary %}
+{% set source_names = {"readme": "the README", "repository": "the repository README", "local": "the README shipped with the package", "description": "the manifest description"} %}
+{% if view.summary.source_url and is_http(view.summary.source_url) %}
+<small>AI-generated from {{ external(source_names.get(view.summary.source, "the package text"), view.summary.source_url) }}. Confidence: {{ view.summary.confidence }}.</small>
+{% else %}
+<small>AI-generated from {{ source_names.get(view.summary.source, "the package text") }}. Confidence: {{ view.summary.confidence }}.</small>
+{% endif %}
+{% if view.brief %}
+
+*This summary is brief because the source says little.{% if is_http(package.url) %} See the {{ external("repository", package.url) }} for more.{% endif %}*
+{% endif %}
+{% endif %}

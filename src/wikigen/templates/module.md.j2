@@ -1,0 +1,33 @@
+---
+title: {{ yaml_title(view.title) }}
+---
+
+# {{ view.title }}
+
+{% if view.summary %}
+<span class="wiki-tag">{{ view.category }}</span>{% if view.summary.player_facing %} <span class="wiki-tag">player-facing</span>{% endif %}
+
+
+{% endif %}
+{% if view.package.library %}
+<span class="wiki-tag">library</span>
+
+{% endif %}
+| Env | Version | Enabled in |
+| --- | --- | --- |
+{% for row in view.rows %}
+| {{ env_link(row.env) }} | {{ row.version or "—" }} {{ row.marker }} | {% set names = [] %}{% for world in row.worlds %}{% set _ = names.append(world_link(row.env, world)) %}{% endfor %}{{ names | mdjoin }} |
+{% endfor %}
+
+{% include "_package_body.md.j2" %}
+{% include "_package_facts.md.j2" %}
+
+{% set package = view.package %}
+{% set requires = [] %}
+{% for id in package.requires %}{% set _ = requires.append(module_link(id)) %}{% endfor %}
+{% set required_by = [] %}
+{% for id in view.required_by %}{% set _ = required_by.append(module_link(id)) %}{% endfor %}
+{% set systems = [] %}
+{% for id in package.systems %}{% set _ = systems.append(system_link(id)) %}{% endfor %}
+Requires: {% if requires %}{{ requires | mdjoin }}{% else %}—{% endif %} · Required by: {% if required_by %}{{ required_by | mdjoin }}{% else %}—{% endif %} · Game systems: {% if systems %}{{ systems | mdjoin }}{% else %}any{% endif %}
+

@@ -1,0 +1,28 @@
+{% set package = view.package %}
+{% if view.summary %}
+{{ view.summary.summary }}
+
+{% if view.summary.features %}
+## Features
+
+{% for feature in view.summary.features %}
+- {{ feature }}
+{% endfor %}
+
+{% endif %}
+{% if view.summary.gm_tips %}
+## At the table
+
+{% for tip in view.summary.gm_tips %}
+- {{ tip }}
+{% endfor %}
+
+{% endif %}
+{% else %}
+{% if view.description %}
+{{ view.description }}
+
+{% endif %}
+*Summary pending.*
+
+{% endif %}

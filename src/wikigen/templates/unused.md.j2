@@ -1,0 +1,46 @@
+# Unused
+
+Modules count as used when a world enables them or an enabled module requires them, directly or indirectly.
+
+{% for name, env in envs.items() %}
+{% set found = findings[name] %}
+## {{ env_tag(name) }}
+
+{% if not env.available %}
+!!! warning "{{ labels[name] }} is unavailable"
+    It could not be read in the last run; this is the last known state.
+
+{% endif %}
+### Removal candidates
+
+{% for id in found.removal_candidates | sort %}
+- {{ module_link(id) }} ({{ env.modules[id].version }})
+{% else %}
+None.
+{% endfor %}
+
+### Libraries nothing needs
+
+{% for id in found.unused_libraries | sort %}
+- {{ module_link(id) }} ({{ env.modules[id].version }})
+{% else %}
+None.
+{% endfor %}
+
+### Unused game systems
+
+{% for id in found.unused_systems | sort %}
+- {{ system_link(id) }} ({{ env.systems[id].version }})
+{% else %}
+None.
+{% endfor %}
+
+### Broken folders
+
+{% for item in env.broken %}
+- {{ item.kind }} {{ item.folder }}: {{ item.error }}
+{% else %}
+None.
+{% endfor %}
+
+{% endfor %}
