@@ -513,10 +513,10 @@ The container's default command starts supercronic with a crontab generated from
 
 ### Logging and run report
 
-Structured logs to stdout (one line per event). Each run writes `reports/<date>.json` and the site footer
-shows its short form: start/end, envs collected (or unavailable), change count, summaries done / pending /
-failed, and the AI outcome: `completed`, `deadline reached`, `skipped: GPU busy`, `skipped: conductor
-unreachable`, `disabled`.
+Structured logs to stdout (one line per event). Each run writes `reports/<date>.json` with start/end, envs
+collected (or unavailable), change count, summaries done / pending / failed, and the AI outcome: `completed`,
+`deadline reached`, `skipped: GPU busy`, `skipped: conductor unreachable`, `disabled`. The site footer shows only
+when the site was last updated.
 
 ### Healthcheck
 

@@ -54,7 +54,6 @@ def test_gpu_busy_still_publishes_facts(cfg, clock, conductor, transport):
     assert conductor.tasks == []
     html = page(cfg, "modules", "dice")
     assert "Summary pending" in html and "5.1.2" in html
-    assert "skipped: GPU busy" in html
 
 
 def test_strict_skip_publishes_nothing(cfg, clock, conductor, transport):
@@ -249,14 +248,15 @@ def test_enabled_modules_without_a_folder_are_simply_listed(cfg, clock, conducto
     assert "2026-10-24" in html
 
 
-def test_home_is_a_welcome_page_with_status_in_the_footer(cfg, clock, conductor, transport):
+def test_home_is_a_welcome_page_with_the_update_time_in_the_footer(cfg, clock, conductor, transport):
     runner(cfg, clock, conductor, transport).build()
     html = live_site(cfg).joinpath("index.html").read_text(encoding="utf-8")
     article, footer = html.split("<article", 1)[1].split("</article>", 1)
     assert "Welcome to" in article and "Where to start" in article
     assert "worlds/main/" in article and "worlds/stage/" in article
-    assert "Summaries:" not in article and "Last run" not in article
-    assert "Last run" in footer
+    assert "Summaries:" not in article and "Last updated" not in article
+    assert "Last updated" in footer
+    assert "Summaries:" not in footer and "AI-generated" not in footer
 
 
 def test_systems_index_lists_each_system_with_its_summary(cfg, clock, conductor, transport):

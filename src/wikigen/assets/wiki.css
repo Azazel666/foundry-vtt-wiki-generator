@@ -9,8 +9,7 @@
   background: var(--md-default-fg-color--lightest);
 }
 
-.md-typeset .wiki-env,
-.md-typeset a .wiki-env {
+.md-typeset .wiki-env {
   display: inline-block;
   padding: 0 0.5em;
   border-radius: 0.3em;

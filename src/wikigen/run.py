@@ -22,7 +22,6 @@ log = logging.getLogger(__name__)
 
 FETCH_TIMEOUT_SECONDS = 20
 USER_AGENT = "foundry-vtt-wiki-generator"
-SITE_WAIT_NOTE = "in progress"
 
 
 @dataclass
@@ -37,17 +36,6 @@ class Report:
     ai: str = ""
     ai_error: str = ""
     error: str = ""
-
-    @property
-    def short(self) -> str:
-        envs = ", ".join(f"{name} {state}" for name, state in self.envs.items())
-        done = self.summaries.get("done_tonight", 0)
-        pending = self.summaries.get("pending", 0)
-        failed = self.summaries.get("failed", 0)
-        ai = self.ai or SITE_WAIT_NOTE
-        return (f"{self.started[:16].replace('T', ' ')} to {(self.finished or SITE_WAIT_NOTE)[:16].replace('T', ' ')}. "
-                f"Envs: {envs}. Changes: {self.changes}. Summaries: {done} done, {pending} pending, {failed} failed. "
-                f"AI: {ai}.")
 
     def as_dict(self) -> dict:
         return {key: value for key, value in vars(self).items()}
@@ -100,7 +88,7 @@ class Runner:
         report.summaries = {**coverage(inventory, self.cfg, self.cache),
                             "done_tonight": report.summaries.get("done_tonight", 0)}
         now = self.clock.now()
-        site = Site(self.cfg, inventory, self.cache, footer_text(self.cfg, now, report.short))
+        site = Site(self.cfg, inventory, self.cache, footer_text(now))
         build_dir = publish.build(site, self.state / "site", now, load_changes(self.cfg))
         publish.publish(self.state / "site", build_dir)
 

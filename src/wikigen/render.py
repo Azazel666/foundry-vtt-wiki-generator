@@ -367,10 +367,9 @@ def write_mkdocs_config(path: Path, config: dict) -> None:
     path.write_text(yaml.safe_dump(config, sort_keys=False, allow_unicode=True), encoding="utf-8")
 
 
-def footer_text(cfg: Config, generated: datetime, status: str) -> str:
+def footer_text(generated: datetime) -> str:
     """Raw HTML in the page footer: the parts are escaped here."""
-    return (f"Generated {esc(generated.strftime('%Y-%m-%d %H:%M %Z'))}. Facts from the Foundry data; "
-            f"summaries are AI-generated. Last run: {esc(status)}")
+    return f"Last updated {esc(generated.strftime('%Y-%m-%d %H:%M %Z'))}"
 
 
 def load_changes(cfg: Config) -> list[tuple[date, list[dict]]]:
