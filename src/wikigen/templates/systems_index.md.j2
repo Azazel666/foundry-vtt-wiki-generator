@@ -7,7 +7,7 @@
 {{ view.overview }}
 
 {% endif %}
-{{ env_tags(view) }} <span class="wiki-tag">{{ view.world_count }} {{ "world" if view.world_count == 1 else "worlds" }}</span>
+{{ env_world_tags(view) }}
 
 {% else %}
 No game systems installed.

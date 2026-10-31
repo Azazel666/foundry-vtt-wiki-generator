@@ -16,7 +16,8 @@ An LLM is used for one thing only: turning a module's or system's README into a 
 - **One page per system and per module,** tagged with the version installed in each environment. No
   duplicate pages per environment.
 - **Worlds per environment,** each listing its game system and the modules it has enabled.
-- **Housekeeping:** modules and systems nothing uses, and version drift between environments.
+- **Housekeeping:** modules and systems nothing uses, compatibility problems, and version drift between
+  environments.
 - **Public, static, English, read-only.** No human editing, no auth.
 
 Non-goals (v1): scanning world documents for actual use of a module (enabled = used), summarising
@@ -135,8 +136,8 @@ Fields to read (all optional except `id`, tolerate missing/extra fields and malf
 
 - **System / module:** `id`, `title`, `description` (HTML), `version`, `authors[]` (`name`, `url`), `url`,
   `manifest`, `download`, `bugs`, `readme`, `changelog`, `license`, `compatibility` (`minimum`, `verified`,
-  `maximum`), `relationships` (`systems[]`, `requires[]`, `recommends[]`, `conflicts[]`), `library` (bool),
-  `packs[]` (names/labels/types only).
+  `maximum`), `relationships` (`systems[]` with each entry's `compatibility`, `requires[]`, `recommends[]`,
+  `conflicts[]`), `library` (bool), `packs[]` (names/labels/types only).
 - **World:** `id`, `title`, `description` (HTML), `system`, `systemVersion`, `coreVersion`, `lastPlayed`.
 
 A folder without a readable manifest: log a warning, list it on the housekeeping page as *broken*.
@@ -171,6 +172,13 @@ Never write to `/foundry`. The mount is read-only anyway; the code must not try.
 - **Removal candidates** (modules): installed, enabled in no world of that env, and not in the requirement
   closure of any world. Flag `library: true` modules separately (*library, nothing needs it*).
 - **Unused systems:** installed, used by no world of that env.
+- **Foundry version:** the newest `coreVersion` of the env's worlds, since the Data folder doesn't record the
+  server's version. An env with no opened world has none, and its packages skip the Foundry check.
+- **Compatibility:** each system and module's `compatibility` against the Foundry version, and each module's
+  `relationships.systems[].compatibility` against the installed version of that system. Systems that aren't
+  installed in the env are skipped. A package is *too new* (below `minimum`), *deprecated* (past `maximum`), or
+  *unverified* (`verified` is an older major version; being builds behind doesn't count). A bare `maximum` such as
+  `13` covers all of 13.x.
 - **Drift:** for every system/module, its version per env compared to the reference env (first in
   `FOUNDRY_ENVS`): newer, older, missing, only here.
 
@@ -383,6 +391,7 @@ Worlds/
   <env>/<world-id>           see 8.3
 Housekeeping/
   unused                     per env: removal candidates, unused libraries, unused systems, broken folders
+  compatibility              per env: deprecated, too new and unverified packages, with their world counts
   drift                      per system/module: versions per env vs. the reference env
 Changes                      full change history, newest first
 ```

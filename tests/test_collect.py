@@ -47,6 +47,17 @@ def test_dangling_link_is_broken(tmp_path):
     assert [(b.folder, b.error) for b in env.broken] == [("linked", "link target is not available")]
 
 
+def test_system_compatibility_is_kept_per_system(tmp_path):
+    root = tmp_path / "Data"
+    module(root, "themed", relationships={"systems": [{"id": "pf2e", "compatibility": {"minimum": 7, "verified": "7.9"}},
+                                                      {"id": "sf2e"}, {"compatibility": {"minimum": 1}}, "junk"]})
+    package = collect_env(Env("main", root), None).modules["themed"]
+    assert package.systems == ["pf2e", "sf2e"]
+    assert set(package.system_compatibility) == {"pf2e", "sf2e"}
+    assert package.system_compatibility["pf2e"].minimum == "7"
+    assert package.system_compatibility["pf2e"].verified == "7.9"
+
+
 def test_odd_manifest_values_are_tolerated(tmp_path):
     root = tmp_path / "Data"
     module(root, "odd", version=2, compatibility={"minimum": 10, "verified": 13.5}, authors="nobody",

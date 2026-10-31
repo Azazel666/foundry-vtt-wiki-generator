@@ -1,0 +1,37 @@
+# Compatibility
+
+What each package says it works with, compared with what the environment runs. Only a newer major version counts as unverified, so packages a few builds behind aren't listed.
+
+{% set sections = [("deprecated", "Deprecated", "Past the highest version the package supports."), ("too new", "Too new", "Needs a newer version than the environment runs."), ("unverified", "Unverified", "Inside its range, but never tested on this major version, so it might not work as intended.")] %}
+{% for name, env in envs.items() %}
+## {{ env_tag(name) }}
+
+{% if not env.available %}
+!!! warning "{{ labels[name] }} is unavailable"
+    It could not be read in the last run; this is the last known state.
+
+{% endif %}
+{% if foundry[name] %}
+Foundry {{ foundry[name] }}, the newest version a world here was last opened with.
+{% else %}
+No world here records a Foundry version, so packages are only checked against game systems.
+{% endif %}
+
+{% for level, title, explanation in sections %}
+{% set rows = issues[name] | selectattr("level", "equalto", level) | list %}
+### {{ title }}
+
+{% if rows %}
+{{ explanation }}
+
+| Package | Version | Checked against | Made for | Worlds |
+| --- | --- | --- | --- | --- |
+{% for issue in rows %}
+| {% if issue.kind == "module" %}{{ module_link(issue.id) }}{% else %}{{ system_link(issue.id) }}{% endif %} | {{ issue.version }} | {{ issue.target }} {{ issue.running }} | {{ issue.compatibility.minimum or "?" }} – {{ issue.compatibility.maximum or "?" }}{% if issue.compatibility.verified %} (verified {{ issue.compatibility.verified }}){% endif %} | {{ issue.worlds }} |
+{% endfor %}
+{% else %}
+None.
+{% endif %}
+
+{% endfor %}
+{% endfor %}

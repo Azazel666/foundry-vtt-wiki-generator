@@ -263,15 +263,16 @@ def test_systems_index_lists_each_system_with_its_summary(cfg, clock, conductor,
     runner(cfg, clock, conductor, transport).run()
     html = page(cfg, "systems")
     assert "<table" not in html.split("<article", 1)[1]
-    assert "Rolls 3D dice" in html and "2 worlds" in html
-    assert '<span class="wiki-env wiki-env-main">Main 6.5.1</span>' in html
-    assert '<span class="wiki-env wiki-env-stage">Stage 6.6.0</span>' in html
+    assert "Rolls 3D dice" in html
+    assert '<span class="wiki-env wiki-env-main">Main 6.5.1 · 1 world</span>' in html
+    assert '<span class="wiki-env wiki-env-stage">Stage 6.6.0 · 1 world</span>' in html
+    assert '<span class="wiki-env wiki-env-stage">Stage 4.0 · 0 worlds</span>' in html
 
 
 def test_envs_have_their_own_badges_everywhere(cfg, clock, conductor, transport):
     runner(cfg, clock, conductor, transport).build()
     for parts in (("modules",), ("modules", "dice"), ("worlds", "main", "strahd"), ("housekeeping", "drift"),
-                  ("housekeeping", "unused")):
+                  ("housekeeping", "unused"), ("housekeeping", "compatibility")):
         assert 'class="wiki-env wiki-env-main"' in page(cfg, *parts)
     assert 'class="wiki-env wiki-env-stage"' in page(cfg, "modules")
     assert 'class="wiki-env wiki-env-main"' in live_site(cfg).joinpath("index.html").read_text(encoding="utf-8")
@@ -289,6 +290,23 @@ def test_housekeeping_pages(cfg, clock, conductor, transport, data):
     assert "broken-one" in unused and "DND5E" in unused
     drift = page(cfg, "housekeeping", "drift")
     assert "only here" in drift and "newer" in drift and "missing" in drift
+
+
+def test_compatibility_page_lists_each_level_per_env(cfg, clock, conductor, transport, data):
+    main = data[0]
+    module(main, "old-mod", "1.0", compatibility={"minimum": 10, "verified": 12, "maximum": 12})
+    module(main, "untested", "1.0", compatibility={"minimum": 10, "verified": 12})
+    module(main, "themed", "1.0", relationships={"systems": [{"id": "pf2e", "compatibility": {"minimum": "7.0"}}]})
+    runner(cfg, clock, conductor, transport).build()
+    article = page(cfg, "housekeeping", "compatibility").split("<article", 1)[1]
+    stage_section = article.split("wiki-env-stage", 1)[1]
+    main_section = article.split("wiki-env-stage", 1)[0]
+    deprecated, rest = main_section.split("Too new", 1)
+    too_new, unverified = rest.split("Unverified", 1)
+    assert "old-mod/" in deprecated and "10 – 12 (verified 12)" in deprecated and "Foundry 13.351" in deprecated
+    assert "themed/" in too_new and "PF2E 6.5.1" in too_new
+    assert "untested/" in unverified and "old-mod/" not in unverified
+    assert "Foundry 13.351" in stage_section and "None." in stage_section
 
 
 def test_module_page_links_and_relationships(cfg, clock, conductor, transport):

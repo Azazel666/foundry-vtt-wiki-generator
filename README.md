@@ -127,6 +127,8 @@ Version tags are immutable: pushing one that's already in the registry is refuse
   Unused page, and worlds enabling them list them by id under *Other*.
 - World descriptions are shown by default and the site is public. Set `WIKI_SHOW_WORLD_DESCRIPTIONS=false` to hide
   them.
+- The Compatibility page takes each env's Foundry version from its worlds, because the Data folder doesn't record
+  it. After an upgrade, the new version only shows once a world has been opened on it.
 - The idle gate also waits for conductor holds (`holders` in the status key), since tasks can't run during one.
 - Keep `RESULT_TTL` on the conductor at 24 h. Its default is 1 h, which loses results parked at the deadline;
   those items are simply queued again the next night.

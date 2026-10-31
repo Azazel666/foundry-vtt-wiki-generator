@@ -5,8 +5,9 @@ from conftest import FakeClock
 
 from wikigen import changes
 from wikigen.collect import collect
-from wikigen.derive import compare_versions, drift, env_findings, requirement_closure
-from wikigen.models import EnvInventory, Inventory, Package, World
+from wikigen.derive import (DEPRECATED, TOO_NEW, UNVERIFIED, compare_versions, compat_issues, compat_level, drift,
+                            env_findings, foundry_version, requirement_closure)
+from wikigen.models import Compatibility, EnvInventory, Inventory, Package, World
 
 
 def test_removal_candidates_exclude_transitive_requirements(cfg):
@@ -62,6 +63,48 @@ def test_drift_states(cfg):
 def test_compare_versions_never_crashes(left, right, expected):
     assert compare_versions(left, right) == expected
     assert compare_versions(right, left) == -expected
+
+
+@pytest.mark.parametrize("compatibility, running, expected", [
+    (dict(minimum="10", verified="12", maximum="12"), "13.351", DEPRECATED),
+    (dict(maximum="13.300"), "13.351", DEPRECATED),
+    (dict(minimum="10", verified="12"), "13.351", UNVERIFIED),
+    (dict(minimum="14"), "13.351", TOO_NEW),
+    (dict(minimum="13.348", verified="13.351", maximum="13"), "13.351", None),
+    (dict(minimum="13", verified="13.341"), "13.351", None),
+    (dict(verified="14"), "13.351", None),
+    (dict(verified="soon"), "13.351", None),
+    (dict(minimum="5.3.2", verified="7.0.5"), "7.10.1", None),
+    (dict(minimum="5.3.2", verified="7.0.5"), "8.4.0", UNVERIFIED),
+    (dict(), "13.351", None),
+])
+def test_compat_level(compatibility, running, expected):
+    assert compat_level(Compatibility(**compatibility), running) == expected
+
+
+def test_foundry_version_is_the_newest_any_world_was_opened_with():
+    worlds = {"a": World(id="a", core_version="13.9"), "b": World(id="b", core_version="13.351"), "c": World(id="c")}
+    assert foundry_version(EnvInventory(worlds=worlds)) == "13.351"
+    assert foundry_version(EnvInventory()) == ""
+
+
+def test_compat_issues_check_foundry_and_installed_systems():
+    old = Compatibility(minimum="10", verified="12", maximum="12")
+    env = EnvInventory(
+        systems={"pf2e": Package(id="pf2e", title="PF2e", version="8.4.0", compatibility=Compatibility(verified="13"))},
+        modules={"old": Package(id="old", title="Old", version="1", compatibility=old),
+                 "fine": Package(id="fine", compatibility=Compatibility(verified="13")),
+                 "themed": Package(id="themed", system_compatibility={"pf2e": Compatibility(verified="7.0.5"),
+                                                                      "sf2e": Compatibility(maximum="1")})},
+        worlds={"w": World(id="w", system="pf2e", core_version="13.351", enabled=["old"]),
+                "x": World(id="x", system="pf2e", enabled=["old"])})
+    found = {(i.id, i.level, i.target, i.running, i.worlds) for i in compat_issues(env)}
+    assert found == {("old", DEPRECATED, "Foundry", "13.351", 2), ("themed", UNVERIFIED, "PF2e", "8.4.0", 0)}
+
+
+def test_without_a_foundry_version_only_systems_are_checked():
+    env = EnvInventory(modules={"old": Package(id="old", compatibility=Compatibility(maximum="12"))})
+    assert compat_issues(env) == []
 
 
 def inventory_of(**env_fields) -> Inventory:

@@ -112,7 +112,6 @@ def _collect_worlds(parent: Path, result: EnvInventory, previous: EnvInventory |
 
 def _package(data: dict, folder: Path) -> Package:
     relationships = data.get("relationships") if isinstance(data.get("relationships"), dict) else {}
-    compatibility = data.get("compatibility") if isinstance(data.get("compatibility"), dict) else {}
     package_id = data["id"]
     return Package(
         id=package_id,
@@ -128,11 +127,12 @@ def _package(data: dict, folder: Path) -> Package:
         readme=_text(data.get("readme")),
         changelog=_text(data.get("changelog")),
         license=_text(data.get("license")),
-        compatibility=Compatibility(minimum=_text(compatibility.get("minimum")),
-                                    verified=_text(compatibility.get("verified")),
-                                    maximum=_text(compatibility.get("maximum"))),
+        compatibility=_compatibility(data.get("compatibility")),
         library=data.get("library") is True,
         systems=[i for i in _relation_ids(relationships.get("systems"), None) if i != package_id],
+        system_compatibility={_text(s.get("id")): _compatibility(s.get("compatibility"))
+                              for s in _dicts(relationships.get("systems"))
+                              if _text(s.get("id")) not in ("", package_id)},
         requires=_relation_ids(relationships.get("requires"), "module"),
         recommends=_relation_ids(relationships.get("recommends"), "module"),
         conflicts=_relation_ids(relationships.get("conflicts"), "module"),
@@ -152,6 +152,12 @@ def _text(value: Any) -> str:
 
 def _dicts(value: Any) -> list[dict]:
     return [entry for entry in value if isinstance(entry, dict)] if isinstance(value, list) else []
+
+
+def _compatibility(value: Any) -> Compatibility:
+    fields = value if isinstance(value, dict) else {}
+    return Compatibility(minimum=_text(fields.get("minimum")), verified=_text(fields.get("verified")),
+                         maximum=_text(fields.get("maximum")))
 
 
 def _relation_ids(value: Any, wanted_type: str | None) -> list[str]:

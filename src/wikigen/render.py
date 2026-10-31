@@ -19,7 +19,8 @@ from markupsafe import Markup
 from . import changes
 from .cache import Cache
 from .config import Config
-from .derive import DriftRow, EnvFindings, compare_versions, drift, env_findings, newest
+from .derive import (DriftRow, EnvFindings, compare_versions, compat_issues, drift, env_findings, foundry_version,
+                     newest)
 from .models import EnvInventory, Inventory, Package, World
 from .text import html_paragraphs, strip_html
 
@@ -141,10 +142,6 @@ class PackageView:
         return self.summary["summary"] if self.summary else self.description
 
     @property
-    def world_count(self) -> int:
-        return sum(len(row.worlds) for row in self.rows)
-
-    @property
     def brief(self) -> bool:
         return bool(self.summary) and (self.summary.get("source") == "description"
                                        or self.summary.get("confidence") == "low")
@@ -222,6 +219,14 @@ class Site:
                 if row.version is not None]
         return Markup(" ".join(tags))
 
+    def _env_world_tags(self, view: PackageView) -> Markup:
+        tags = []
+        for row in view.rows:
+            if row.version is not None or row.worlds:
+                worlds = f"{len(row.worlds)} {'world' if len(row.worlds) == 1 else 'worlds'}"
+                tags.append(self._env_tag(row.env, f"{row.label} {row.version or '?'} · {worlds}"))
+        return Markup(" ".join(tags))
+
     def _helpers(self, page: str) -> dict:
         def package_link(kind: str, package_id: str, title: str | None = None) -> Markup:
             views = self.modules if kind == "module" else self.systems
@@ -236,7 +241,7 @@ class Site:
         return {"module_link": lambda i, title=None: package_link("module", i, title),
                 "system_link": lambda i, title=None: package_link("system", i, title),
                 "world_link": world_link, "env_link": lambda env: self._env_link(page, env),
-                "env_tag": self._env_tag, "env_tags": self._env_tags,
+                "env_tag": self._env_tag, "env_tags": self._env_tags, "env_world_tags": self._env_world_tags,
                 "external": self._external, "yaml_title": yaml_title, "played": played_date,
                 "paragraphs": html_paragraphs,
                 "is_http": lambda url: safe_url(url) is not None,
@@ -288,6 +293,9 @@ class Site:
                 self._write(docs, self._world_path(name, world.id), "world.md.j2", env=name, world=world,
                             groups=_grouped(views), unknown=unknown)
         self._write(docs, "housekeeping/unused.md", "unused.md.j2", envs=self.envs, findings=self.findings)
+        self._write(docs, "housekeeping/compatibility.md", "compatibility.md.j2", envs=self.envs,
+                    foundry={name: foundry_version(env) for name, env in self.envs.items()},
+                    issues={name: compat_issues(env) for name, env in self.envs.items()})
         rows = drift(self.inventory, self.cfg.reference)
         self._write(docs, "housekeeping/drift.md", "drift.md.j2", rows=rows, reference=self.cfg.reference,
                     cell=_drift_cell)
@@ -323,7 +331,9 @@ class Site:
                 {"Game Systems": "systems/index.md"},
                 {"Modules": "modules/index.md"},
                 {"Worlds": worlds_nav},
-                {"Housekeeping": [{"Unused": "housekeeping/unused.md"}, {"Drift": "housekeeping/drift.md"}]},
+                {"Housekeeping": [{"Unused": "housekeeping/unused.md"},
+                                  {"Compatibility": "housekeeping/compatibility.md"},
+                                  {"Drift": "housekeeping/drift.md"}]},
                 {"Changes": "changes.md"},
             ],
         }

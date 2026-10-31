@@ -36,6 +36,7 @@ class Package(BaseModel):
     compatibility: Compatibility = Field(default_factory=Compatibility)
     library: bool = False
     systems: list[str] = Field(default_factory=list)
+    system_compatibility: dict[str, Compatibility] = Field(default_factory=dict)
     requires: list[str] = Field(default_factory=list)
     recommends: list[str] = Field(default_factory=list)
     conflicts: list[str] = Field(default_factory=list)

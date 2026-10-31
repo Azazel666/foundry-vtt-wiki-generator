@@ -1,13 +1,15 @@
-"""Derived data: requirement closure, removal candidates, drift. Pure functions of the inventory."""
+"""Derived data: requirement closure, removal candidates, compatibility, drift. Pure functions of the inventory."""
 
 import re
 from dataclasses import dataclass, field
+from functools import cmp_to_key
 
 from packaging.version import InvalidVersion, Version
 
-from .models import EnvInventory, Inventory, Package
+from .models import Compatibility, EnvInventory, Inventory, Package
 
 SAME, NEWER, OLDER, MISSING, ONLY_HERE = "same", "newer", "older", "missing", "only here"
+DEPRECATED, TOO_NEW, UNVERIFIED = "deprecated", "too new", "unverified"
 
 
 def _natural(value: str) -> tuple:
@@ -69,6 +71,78 @@ def env_findings(env: EnvInventory) -> EnvFindings:
     used_systems = {world.system for world in env.worlds.values()}
     findings.unused_systems = [system for system in env.systems if system not in used_systems]
     return findings
+
+
+def foundry_version(env: EnvInventory) -> str:
+    """The Data folder doesn't record the server's version: the newest one a world was last opened with is the
+    closest fact. Empty when no world has been opened."""
+    return max((world.core_version for world in env.worlds.values()), key=cmp_to_key(compare_versions), default="")
+
+
+def _generation(version: str) -> str:
+    found = re.search(r"\d+", version)
+    return found.group() if found else ""
+
+
+def _past_maximum(maximum: str, running: str) -> bool:
+    """A bare number such as 13 covers the whole generation, 13.351 included."""
+    if maximum.isdigit():
+        return compare_versions(_generation(running), maximum) > 0
+    return compare_versions(running, maximum) > 0
+
+
+def _past_verified(verified: str, running: str) -> bool:
+    """Only a newer generation counts: nearly every package is a few builds behind, and that's no warning."""
+    tested, current = _generation(verified), _generation(running)
+    return bool(tested and current) and compare_versions(current, tested) > 0
+
+
+def compat_level(compatibility: Compatibility, running: str) -> str | None:
+    if compatibility.minimum and compare_versions(compatibility.minimum, running) > 0:
+        return TOO_NEW
+    if compatibility.maximum and _past_maximum(compatibility.maximum, running):
+        return DEPRECATED
+    if compatibility.verified and _past_verified(compatibility.verified, running):
+        return UNVERIFIED
+    return None
+
+
+@dataclass
+class CompatIssue:
+    kind: str
+    id: str
+    title: str
+    version: str
+    level: str
+    target: str  # "Foundry" or the game system's title
+    running: str
+    compatibility: Compatibility
+    worlds: int
+
+
+def _world_count(kind: str, package_id: str, env: EnvInventory) -> int:
+    if kind == "module":
+        return sum(package_id in world.enabled for world in env.worlds.values())
+    return sum(package_id == world.system for world in env.worlds.values())
+
+
+def compat_issues(env: EnvInventory) -> list[CompatIssue]:
+    """Packages checked against the env's Foundry version, modules also against its installed game systems."""
+    core = foundry_version(env)
+    issues = []
+    for kind, packages in (("system", env.systems), ("module", env.modules)):
+        for package in packages.values():
+            checks = [("Foundry", core, package.compatibility)] if core else []
+            for system_id, compatibility in package.system_compatibility.items():
+                system = env.systems.get(system_id)
+                if system and system.version:
+                    checks.append((system.name, system.version, compatibility))
+            for target, running, compatibility in checks:
+                level = compat_level(compatibility, running)
+                if level:
+                    issues.append(CompatIssue(kind, package.id, package.name, package.version, level, target, running,
+                                              compatibility, _world_count(kind, package.id, env)))
+    return sorted(issues, key=lambda issue: issue.title.lower())
 
 
 @dataclass
